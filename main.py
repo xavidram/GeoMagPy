@@ -1,10 +1,28 @@
 """Sample for finding magnetic field for a specific lat and long and altitude."""
 from math import *
 import networkx as nx
+from networkx.utils import pairwise
 from datetime import date
 from geomag import WorldMagneticModel
 
+# STATIC DATA STRUCTURES #
+GEODATA = {
+    'X': '1',
+    'Y': '1',
+    'Z': '1',
+    'H': '1',
+    'F': '1',
+    'I': '1',
+    'D': '1',
+    'GV': '1',
+    'Lat': '1',
+    'Lon': '1',
+    'Alt': '1',
+    'Unit': '1'
+}
+
 # GLOBALS #
+WMM = WorldMagneticModel('WMM.COF') # Read the data file
 RADIUS_OF_EARTH = 6378.1 # in kilometers
 # barings #
 EAST = radians(98.75389)
@@ -39,7 +57,7 @@ def findGridStart(lat, lon, distance):
     TL = findCoord(radians(TL[0]), radians(TL[1]),NORTH, distance)
     return TL
 
-def GenerateGrid(sLat, sLon, radius, distance):
+def GenerateGrid(sLat, sLon, alt, radius, distance, UNIT='m'):
     """
         Generate grid of latitude and longitude points for finding magnetic field
 
@@ -49,9 +67,26 @@ def GenerateGrid(sLat, sLon, radius, distance):
         2param distance:    distance between each point in radius, used to find how many points will be generated
     """
     start = findGridStart(sLat, sLon, radius) # find grid top left point
-    points = int((radius / distance) * 2) # find the amount of points from left to right of grid
-    Grid = nx.grid_2d_graph(points,points) # generate a grid of nodes
-    nx.get_node_attributes(Grid, "data")
+    rows = int(radius / distance) * 2
+    cols = int(radius / distance) * 2 # find the amount of points from left to right of grid
+    Grid = nx.empty_graph(0,None) # Create empty graph
+    # Rather than se the grid_2d_graph, lets make our own
+    data = WMM.calc_mag_field(start[0], start[1], alt, unit=UNIT) # get the first point
+    point = start # set lat lon for pointer
+    for i in range(0,rows):
+        for j in range(0,cols):
+            Grid.add_node((i,j), latitude=point[0],longitude=point[1], toal_intensity=data.total_intensity, Bx=data.Bx, By=data.By, Bz=data.Bz, H=data.Bh, I=data.dip, D=data.dip, GV=data.grid_variation)
+            point = findCoord(radians(point[0]), radians(point[1]), EAST, distance) # lets shift this east to find points in row
+        start = findCoord(radians(start[0]), radians(start[1]), SOUTH, distance) # shift start of row down to find next row
+        point = start # update pointer
+    # Now we can go add edges
+    Grid.add_edges_from(((i, j), (pi, j))
+                     for pi, i in pairwise(list(range(rows))) for j in range(cols))
+    Grid.add_edges_from(((i, j), (i, pj))
+                     for i in range(rows) for pj, j in pairwise(list(range(cols))))
+    # Will ignore periodic and directed as I don't care too much about it
+    # Lets print the graph and see
+    print nx.info(Grid)
 
 def main():
     """Main Function."""
@@ -59,10 +94,9 @@ def main():
     sLon = -98.1635
     alt = 29 # in meters
     unit = 'm' # meter, ft = feet, k = kilometer
-    GenerateGrid(sLat, sLon, 1.0, 0.01)
+    GenerateGrid(sLat, sLon, alt, 0.1, 0.01, 'm')
     # Find top left point of grid
     # Find bottom right point of grid
 
 if __name__ == '__main__':
-    WMM = WorldMagneticModel('WMM.COF') # Read the data file
     main()
