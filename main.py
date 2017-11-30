@@ -86,7 +86,8 @@ def GenerateGrid(sLat, sLon, alt, radius, distance, UNIT='m'):
                      for i in range(rows) for pj, j in pairwise(list(range(cols))))
     # Will ignore periodic and directed as I don't care too much about it
     # Lets print the graph and see
-    print nx.info(Grid)
+    Grid.nodes(data=True)
+    print Grid
 
 def main():
     """Main Function."""
