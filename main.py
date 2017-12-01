@@ -87,7 +87,7 @@ def GenerateGrid(sLat, sLon, alt, radius, distance, UNIT='m'):
     # Will ignore periodic and directed as I don't care too much about it
     # Lets print the graph and see
     Grid.nodes(data=True)
-    print Grid
+    return Grid
 
 def main():
     """Main Function."""
@@ -95,9 +95,9 @@ def main():
     sLon = -98.1635
     alt = 29 # in meters
     unit = 'm' # meter, ft = feet, k = kilometer
-    GenerateGrid(sLat, sLon, alt, 0.1, 0.01, 'm')
-    # Find top left point of grid
-    # Find bottom right point of grid
+    G = GenerateGrid(sLat, sLon, alt, 0.1, 0.01, 'm')
+    for node in G.nodes():
+        print str(G.node[node]["latitude"]) + "," + str(G.node[node]["longitude"])
 
 if __name__ == '__main__':
     main()
