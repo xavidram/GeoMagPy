@@ -5,21 +5,6 @@ from networkx.utils import pairwise
 from datetime import date
 from geomag import WorldMagneticModel
 
-# STATIC DATA STRUCTURES #
-GEODATA = {
-    'X': '1',
-    'Y': '1',
-    'Z': '1',
-    'H': '1',
-    'F': '1',
-    'I': '1',
-    'D': '1',
-    'GV': '1',
-    'Lat': '1',
-    'Lon': '1',
-    'Alt': '1',
-    'Unit': '1'
-}
 
 # GLOBALS #
 WMM = WorldMagneticModel('WMM.COF') # Read the data file
@@ -85,9 +70,15 @@ def GenerateGrid(sLat, sLon, alt, radius, distance, UNIT='m'):
     Grid.add_edges_from(((i, j), (i, pj))
                      for i in range(rows) for pj, j in pairwise(list(range(cols))))
     # Will ignore periodic and directed as I don't care too much about it
+    Grid.add_edges_from((v,u) for u,v in Grid.edges())
     # Lets print the graph and see
     Grid.nodes(data=True)
     return Grid
+
+def Export(grid):
+    with open("output.txt","w") as o:
+        for n in grid.nodes():
+            o.write(str(grid.node[n]["latitude"]) + "," + str(grid.node[n]["longitude"]) + "\n")
 
 def main():
     """Main Function."""
@@ -95,9 +86,9 @@ def main():
     sLon = -98.1635
     alt = 29 # in meters
     unit = 'm' # meter, ft = feet, k = kilometer
-    G = GenerateGrid(sLat, sLon, alt, 0.1, 0.01, 'm')
-    for node in G.nodes():
-        print str(G.node[node]["latitude"]) + "," + str(G.node[node]["longitude"])
+    G = GenerateGrid(sLat, sLon, alt, 1, 0.01, 'm')
+    path = nx.shortest_path(G,(1,90), (95,2))
+
 
 if __name__ == '__main__':
     main()
